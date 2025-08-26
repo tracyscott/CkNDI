@@ -4,7 +4,7 @@
 
     <groupId>xyz.theforks</groupId>
     <artifactId>ckndi</artifactId>
-    <version>0.0.3</version>
+    <version>0.0.4</version>
     <packaging>jar</packaging>
 
     <properties>

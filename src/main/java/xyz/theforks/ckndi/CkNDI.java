@@ -53,6 +53,8 @@ public class CkNDI extends LXPattern implements UIDeviceControls<CkNDI> {
             .setDescription("Tile Y");
     public final BooleanParameter flipHorizontal = new BooleanParameter("FlipX", false);
     public final BooleanParameter flipVertical = new BooleanParameter("FlipY", false);
+    public final BooleanParameter antialias = new BooleanParameter("Antialias", false)
+            .setDescription("Enable bilinear interpolation for smoother rendering");
 
     // NDI components
     private DevolayFinder finder;
@@ -93,6 +95,7 @@ public class CkNDI extends LXPattern implements UIDeviceControls<CkNDI> {
         addParameter("rotate", this.rotate);
         addParameter("tileX", this.tileX);
         addParameter("tileY", this.tileY);
+        addParameter("antialias", this.antialias);
 
         // Initialize devolay
         initializeDevolay();
@@ -572,12 +575,39 @@ public class CkNDI extends LXPattern implements UIDeviceControls<CkNDI> {
                 rotateUV(uvs[0], uvs[1], rotate.getValuef() * (float) Math.PI * 2, uvs);
             }
 
-            int x = Math.round((uOffset.getValuef() + uvs[0] * uWidth.getValuef()) * (width - 1));
-            int y = Math.round((vOffset.getValuef() + uvs[1] * vHeight.getValuef()) * (height - 1));
-
             int color = 0;
-            if (x >= 0 && x < width && y >= 0 && y < height) {
-                color = frame.getRGB(x, y);
+            if (antialias.isOn()) {
+                // Calculate continuous coordinates (don't round yet)
+                float fx = (uOffset.getValuef() + uvs[0] * uWidth.getValuef()) * (width - 1);
+                float fy = (vOffset.getValuef() + uvs[1] * vHeight.getValuef()) * (height - 1);
+
+                // Get the four corner pixels for interpolation
+                int x0 = Math.max(0, Math.min(width - 2, (int) Math.floor(fx)));
+                int y0 = Math.max(0, Math.min(height - 2, (int) Math.floor(fy)));
+                int x1 = x0 + 1;
+                int y1 = y0 + 1;
+
+                // Calculate fractional parts for interpolation weights
+                float dx = fx - x0;
+                float dy = fy - y0;
+
+                if (x0 >= 0 && x1 < width && y0 >= 0 && y1 < height) {
+                    // Get the four corner colors
+                    int c00 = frame.getRGB(x0, y0); // top-left
+                    int c10 = frame.getRGB(x1, y0); // top-right
+                    int c01 = frame.getRGB(x0, y1); // bottom-left
+                    int c11 = frame.getRGB(x1, y1); // bottom-right
+
+                    // Extract RGB components and interpolate each channel separately
+                    color = UVUtil.bilinearInterpolateRGB(c00, c10, c01, c11, dx, dy);
+                }
+            } else {
+                int x = Math.round((uOffset.getValuef() + uvs[0] * uWidth.getValuef()) * (width - 1));
+                int y = Math.round((vOffset.getValuef() + uvs[1] * vHeight.getValuef()) * (height - 1));
+
+                if (x >= 0 && x < width && y >= 0 && y < height) {
+                    color = frame.getRGB(x, y);
+                }
             }
             if (uv.point.index < colors.length) {
                 // Extract ARGB components including alpha
@@ -694,6 +724,10 @@ public class CkNDI extends LXPattern implements UIDeviceControls<CkNDI> {
         new UIButton(0, 0, 80, 18)
                 .setParameter(pattern.autoConnect)
                 .setLabel("Auto Connect")
+                .addToContainer(autoContainer);
+        new UIButton(90, 0, 60, 18)
+                .setParameter(pattern.antialias)
+                .setLabel("Antialias")
                 .addToContainer(autoContainer);
 
         // UV controls container

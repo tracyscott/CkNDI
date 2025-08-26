@@ -106,4 +106,47 @@ public class UVUtil {
 
         return result;
     }
+
+    static public int bilinearInterpolateRGB(int c00, int c10, int c01, int c11, float dx, float dy) {
+        // Extract ARGB components
+        int a00 = (c00 >> 24) & 0xFF;
+        int r00 = (c00 >> 16) & 0xFF;
+        int g00 = (c00 >> 8) & 0xFF;
+        int b00 = c00 & 0xFF;
+        
+        int a10 = (c10 >> 24) & 0xFF;
+        int r10 = (c10 >> 16) & 0xFF;
+        int g10 = (c10 >> 8) & 0xFF;
+        int b10 = c10 & 0xFF;
+        
+        int a01 = (c01 >> 24) & 0xFF;
+        int r01 = (c01 >> 16) & 0xFF;
+        int g01 = (c01 >> 8) & 0xFF;
+        int b01 = c01 & 0xFF;
+        
+        int a11 = (c11 >> 24) & 0xFF;
+        int r11 = (c11 >> 16) & 0xFF;
+        int g11 = (c11 >> 8) & 0xFF;
+        int b11 = c11 & 0xFF;
+        
+        // Bilinear interpolation for each channel including alpha
+        // Formula: (1-dx)*(1-dy)*c00 + dx*(1-dy)*c10 + (1-dx)*dy*c01 + dx*dy*c11
+        float w00 = (1 - dx) * (1 - dy);
+        float w10 = dx * (1 - dy);
+        float w01 = (1 - dx) * dy;
+        float w11 = dx * dy;
+        
+        int a = Math.round(w00 * a00 + w10 * a10 + w01 * a01 + w11 * a11);
+        int r = Math.round(w00 * r00 + w10 * r10 + w01 * r01 + w11 * r11);
+        int g = Math.round(w00 * g00 + w10 * g10 + w01 * g01 + w11 * g11);
+        int b = Math.round(w00 * b00 + w10 * b10 + w01 * b01 + w11 * b11);
+        
+        // Clamp values to valid range and combine back into ARGB
+        a = Math.max(0, Math.min(255, a));
+        r = Math.max(0, Math.min(255, r));
+        g = Math.max(0, Math.min(255, g));
+        b = Math.max(0, Math.min(255, b));
+        
+        return (a << 24) | (r << 16) | (g << 8) | b;
+    }
 }
