@@ -31,11 +31,26 @@ public class UVUtil {
         cross[1] = zAxis[2] * planeNormal[0] - zAxis[0] * planeNormal[2];
         cross[2] = zAxis[0] * planeNormal[1] - zAxis[1] * planeNormal[0];
         float dot = zAxis[0] * planeNormal[0] + zAxis[1] * planeNormal[1] + zAxis[2] * planeNormal[2];
+        
+        // Check if the vectors are parallel or anti-parallel
+        float crossLength = vectorLength(cross);
+        if (crossLength < 0.0001f) {
+            // Vectors are parallel or anti-parallel
+            if (dot > 0) {
+                // Already aligned with Z axis, no rotation needed
+                return new float[] {1, 0, 0, 0};
+            } else {
+                // Opposite to Z axis, rotate 180 degrees around any perpendicular axis
+                // Use X axis as the rotation axis
+                return new float[] {1, 0, 0, (float)Math.PI};
+            }
+        }
+        
         float[] axis = new float[3];
         axis[0] = cross[0];
         axis[1] = cross[1];
         axis[2] = cross[2];
-        float angle = (float) Math.acos(dot);
+        float angle = (float) Math.acos(Math.max(-1, Math.min(1, dot))); // Clamp dot product to avoid NaN
         return new float[] {axis[0], axis[1], axis[2], angle};
     }
 
