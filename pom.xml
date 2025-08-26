@@ -4,7 +4,7 @@
 
     <groupId>xyz.theforks</groupId>
     <artifactId>ckndi</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.3</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -65,6 +65,7 @@
             <artifactId>devolay</artifactId>
             <!-- This version is compatible with NDI SDK v5 and receiver.close() doesn't crash on windows -->
             <version>2.1.1</version>
+            <classifier>integrated</classifier>
             <!-- the version below has Apple Silicon courtesy Titanic's End -->
             <!-- <version>2.1.0-te</version> -->
         </dependency>

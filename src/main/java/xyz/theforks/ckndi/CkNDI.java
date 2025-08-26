@@ -314,6 +314,7 @@ public class CkNDI extends LXPattern implements UIDeviceControls<CkNDI> {
         try {
             int width = videoFrame.getXResolution();
             int height = videoFrame.getYResolution();
+            boolean hasAlpha = videoFrame.getFourCCType() == DevolayFrameFourCCType.BGRA;
 
             if (width <= 0 || height <= 0)
                 return;
@@ -324,9 +325,11 @@ public class CkNDI extends LXPattern implements UIDeviceControls<CkNDI> {
                 return;
 
             // Convert to BufferedImage
-            BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+            BufferedImage image;
+            if (!hasAlpha) image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+            else image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 
-            // Convert BGRX to RGB
+            // Convert BGRX/BGRA to RGB/ARGB
             byte[] pixelData = new byte[frameData.remaining()];
             frameData.get(pixelData);
 
@@ -337,11 +340,18 @@ public class CkNDI extends LXPattern implements UIDeviceControls<CkNDI> {
                         int b = pixelData[pixelIndex] & 0xFF;
                         int g = pixelData[pixelIndex + 1] & 0xFF;
                         int r = pixelData[pixelIndex + 2] & 0xFF;
-                        // Skip alpha channel (pixelIndex + 3)
+                        int a = pixelData[pixelIndex + 3] & 0xFF;
 
-                        int rgb = (r << 16) | (g << 8) | b;
+                        int rgb;
+                        if (hasAlpha) {
+                            // BGRA format - include alpha channel
+                            rgb = (a << 24) | (r << 16) | (g << 8) | b;
+                        } else {
+                            // BGRX format - ignore X channel, set alpha to opaque
+                            rgb = (0xFF << 24) | (r << 16) | (g << 8) | b;
+                        }
                         image.setRGB(x, y, rgb);
-                        pixelIndex += 4; // BGRX format
+                        pixelIndex += 4; // Both BGRX and BGRA are 4 bytes per pixel
                     }
                 }
             }
@@ -570,7 +580,14 @@ public class CkNDI extends LXPattern implements UIDeviceControls<CkNDI> {
                 color = frame.getRGB(x, y);
             }
             if (uv.point.index < colors.length) {
-                colors[uv.point.index] = LXColor.rgb(LXColor.red(color), LXColor.green(color), LXColor.blue(color));
+                // Extract ARGB components including alpha
+                int alpha = (color >> 24) & 0xFF;
+                int red = (color >> 16) & 0xFF;
+                int green = (color >> 8) & 0xFF;
+                int blue = color & 0xFF;
+                
+                // Use LXColor.rgba to include alpha channel
+                colors[uv.point.index] = LXColor.rgba(red, green, blue, alpha);
             } else {
                 uvsNeedUpdate = true;
             }
