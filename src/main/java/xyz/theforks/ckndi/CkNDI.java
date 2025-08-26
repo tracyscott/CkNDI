@@ -238,7 +238,7 @@ public class CkNDI extends LXPattern implements UIDeviceControls<CkNDI> {
         while (running && !Thread.currentThread().isInterrupted()) {
             try {
                 // Use receiveCapture like in the example (with 0 timeout for non-blocking)
-                DevolayFrameType frameType = receiver.receiveCapture(videoFrame, null, null, 0);
+                DevolayFrameType frameType = receiver.receiveCapture(videoFrame, null, null, 10);
                 
                 if (frameType == DevolayFrameType.VIDEO) {
                     frameCount++;
@@ -246,8 +246,10 @@ public class CkNDI extends LXPattern implements UIDeviceControls<CkNDI> {
                     
                     // Log every 30 frames or every 5 seconds
                     if (frameCount % 30 == 0 || (currentTime - lastLogTime > 5000)) {
-                        LX.log("Received NDI video frame #" + frameCount + ", resolution: " + 
-                               videoFrame.getXResolution() + "x" + videoFrame.getYResolution());
+                        if (VERBOSE) {
+                            LX.log("Received NDI video frame #" + frameCount + ", resolution: " +
+                                    videoFrame.getXResolution() + "x" + videoFrame.getYResolution());
+                        }
                         lastLogTime = currentTime;
                     }
                     
@@ -266,6 +268,17 @@ public class CkNDI extends LXPattern implements UIDeviceControls<CkNDI> {
                 } else {
                     // Connection lost or other error
                     LX.log("NDI receive unexpected frame type: " + frameType);
+                }
+            } catch (IllegalArgumentException e) {
+                if (e.getMessage() != null && e.getMessage().contains("Unknown frame type id")) {
+                    // Devolay doesn't recognize this frame type - continue receiving
+                    if (VERBOSE) LX.log("Devolay unknown frame type (continuing): " + e.getMessage());
+                    //Thread.sleep(1); // Small delay to prevent tight loop
+                } else {
+                    if (running) {
+                        LX.error(e, "IllegalArgumentException in NDI receive loop");
+                    }
+                    break;
                 }
             } catch (Exception e) {
                 if (running) {
