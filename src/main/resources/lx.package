@@ -1,0 +1,15 @@
+{
+  name: "CkNDI",
+  mediaDir: "CkNDI",
+  author: "Tracy Scott",
+  url: "https://github.com/tracyscott/CkNDI",
+  
+  build: {
+    name: "@project.name@",
+    version: "@project.version@",
+    groupId: "@project.groupId@",
+    artifactId: "@project.artifactId@",
+    lxVersion: "@lx.version@",
+    buildTimestamp: "@maven.build.timestamp@"
+  }
+}
