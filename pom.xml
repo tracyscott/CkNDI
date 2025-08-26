@@ -125,6 +125,24 @@
                             </resources>
                         </configuration>
                     </execution>
+                    <execution>
+                                <id>filter-resources</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>resources</goal>
+                                </goals>
+                                <configuration>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/main/resources</directory>
+                                            <includes>
+                                                <include>lx.package</include>
+                                            </includes>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
                 </executions>
             </plugin> 
         </plugins>
